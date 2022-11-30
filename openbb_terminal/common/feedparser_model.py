@@ -73,24 +73,30 @@ def get_news(
         else:
             console.print("[red]Could not retrieve data\n[/red]")
             break
+    
+    # Early exit if we failed to retrieve data
+    if not have_data:
+        # specify column names even if no data provided for parity
+        return pd.DataFrame(columns=["title", "link", "published"])
 
     # Filter based on data sources
     if sources:
         newdata: List = []
+        # If we have multiple sources, split them up into a list
+        # If we have only one, make it a list of one element
+        sources_list: List[str] = sources.split(",") if "," in sources else [sources]
         for entry in list(data.entries):
             # check if sources specified
-            if "," in sources:
-                if entry["source"]["title"].lower().find(sources.lower()) != -1:
+            for s in sources_list:
+                if entry["source"]["title"].lower().find(s.lower()) != -1:
                     newdata.append(entry)
-            else:
-                for s in sources.split(","):
-                    if entry["source"]["title"].lower().find(s.lower()) != -1:
-                        newdata.append(entry)
-
+                    # Once we have a match, we don't want to add the entry again if multiple matches
+                    break
         if newdata:
             df = pd.DataFrame(newdata, columns=["title", "link", "published"])
         else:
-            return pd.DataFrame()
+            # specify column names even if no data provided for parity
+            return pd.DataFrame(columns=["title", "link", "published"])
     else:
         df = pd.DataFrame(data.entries, columns=["title", "link", "published"])
     df["published"] = pd.to_datetime(df["published"])
